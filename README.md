@@ -1,6 +1,7 @@
 # blockchain-validator
 Simple express API that comunicate with a blockchain node to validate covid exams with a solidity smart contract.
 
+Before running, make sure that you have set up a blockchain client, like Infura or Ganache, and deployed the solidity contract inside the folder "contracts" in the blockchain.
 To run, its necessary to create a `.env` file with the following data:
 ```
 CLIENT_HOST= Blockchain client host
