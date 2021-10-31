@@ -1,17 +1,60 @@
+const { json } = require("express");
 const Web3 = require("web3");
 require("dotenv").config();
 
 const clientUrl = process.env.CLIENT_HOST + ":" + process.env.CLIENT_PORT;
 const contractAdress = process.env.CONTRACT_ADRESS;
+const walletAdress = process.env.WALLET_ADRESS;
 
-function start() {
-  // const web3 = new Web3(clientUrl);
+const web3 = new Web3(clientUrl);
+const contractInstance = getContractInstance(web3);
 
-  console.log(clientUrl);
-  console.log(contractAdress);
+exports.createOrUpdateExam = async (req, res, next) => {
+  const cpf = req.body.cpf;
+  const isInfected = req.body.isInfected;
 
-  // connection = getContractInstance(web3);
-  // connection.createOrUpdate("120", true);
+  contractInstance.methods
+    .createOrUpdate(cpf, isInfected)
+    .send({ from: walletAdress, gas: 2999984 })
+    .on("receipt", function (receipt) {
+      console.log(receipt);
+      res.status(200).send(JSON.stringify(receipt));
+    })
+    .on("error", function (error, receipt) {
+      res
+        .status(500)
+        .send(
+          "Failed to send exam: " +
+            error +
+            "\nReceipt: " +
+            JSON.stringify(receipt)
+        );
+    });
+};
+
+exports.retrieveExamByCpf = async (req, res, next) => {
+  const cpf = req.body.cpf;
+
+  const result = await contractInstance.methods
+    .retrieveLastExamByCpf(cpf)
+    .call()
+    .catch(function (err) {
+      res.status(500).send("Failed to get exam: " + err);
+    });
+
+  console.log(parseResult(result));
+  res.status(200).send(parseResult(result));
+};
+
+function parseResult(result) {
+  var obj = new Object();
+  obj.cpf = result.cpf;
+  obj.id = result.id;
+  obj.isInfected = result.isInfected;
+  obj.isLastExam = result.isLastExam;
+  obj.timestamp = result.timestamp;
+
+  return JSON.stringify(obj);
 }
 
 function getContractInstance(web3) {
@@ -184,5 +227,3 @@ function getContractInstance(web3) {
 
   return EthereumSession;
 }
-
-module.exports = start;
